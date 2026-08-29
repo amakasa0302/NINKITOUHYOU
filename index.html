@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダンカグ実装曲 人気投票</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; padding: 0 15px; background: #f5f5f5; color: #333; }
+    h1, h2, h3, h4 { border-bottom: 2px solid #333; padding-bottom: 5px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    .vote-row { border: 1px solid #e0e0e0; background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+    .vote-row-title { font-weight: bold; margin-bottom: 8px; color: #1f2937; }
+    .vote-row-inputs { display: flex; gap: 10px; flex-wrap: wrap; }
+    .vote-row-inputs .select-song { flex: 2; min-width: 200px; }
+    .vote-row-inputs .select-mode { flex: 1; min-width: 90px; }
+    .vote-row-inputs .select-diff { flex: 1; min-width: 110px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; }
+    input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
+    textarea { height: 80px; resize: vertical; }
+    button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+    button:hover { background: #45a049; }
+    button.reset { background: #f44336; margin-top: 10px; }
+    button.reset:hover { background: #da190b; }
+    button.toggle-pub { background: #2196F3; margin-bottom: 15px; }
+    button.toggle-pub:hover { background: #0b7dda; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
+    th { background: #eee; }
+    .msg { color: #d9534f; font-weight: bold; margin-bottom: 10px; }
+    .comment-box { background: #f9f9f9; border-left: 4px solid #4CAF50; padding: 10px; margin-bottom: 8px; border-radius: 0 4px 4px 0; }
+    .comment-author { font-weight: bold; font-size: 13px; color: #555; margin-bottom: 4px; }
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: #fff; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
+    .badge-open { background: #4CAF50; }
+    .badge-closed { background: #e91e63; }
+  </style>
+</head>
+<body>
+
+  <h1>東方ダンマクカグラ 実装曲人気投票</h1>
+
+  <!-- 投票フォーム（受付中のみ表示） -->
+  <div class="card" id="voteCard">
+    <h2>投票フォーム <span class="status-badge badge-open">投票受付中</span></h2>
+    <p>1希望: 3pt / 2希望: 2pt / 3〜5希望: 1pt</p>
+    <div id="error-msg" class="msg"></div>
+    <form id="voteForm">
+      
+      <div class="form-group">
+        <label for="nickname">ニックネーム (任意):</label>
+        <input type="text" id="nickname" placeholder="名無しさん（未入力の場合は「匿名」）">
+      </div>
+
+      <!-- 第1希望 -->
+      <div class="vote-row">
+        <div class="vote-row-title">第1希望 (3pt)</div>
+        <div class="vote-row-inputs">
+          <div class="select-song"><label>楽曲</label><select id="p1_song"><option value="">-- 選択してください --</option></select></div>
+          <div class="select-mode"><label>モード</label><select id="p1_mode"><option value="6key">6key</option><option value="4key">4key</option></select></div>
+          <div class="select-diff"><label>難易度</label><select id="p1_diff"><option value="EASY">EASY</option><option value="NORMAL">NORMAL</option><option value="HARD">HARD</option><option value="LUNATIC" selected>LUNATIC</option></select></div>
+        </div>
+      </div>
+
+      <!-- 第2希望 -->
+      <div class="vote-row">
+        <div class="vote-row-title">第2希望 (2pt)</div>
+        <div class="vote-row-inputs">
+          <div class="select-song"><label>楽曲</label><select id="p2_song"><option value="">-- 選択してください --</option></select></div>
+          <div class="select-mode"><label>モード</label><select id="p2_mode"><option value="6key">6key</option><option value="4key">4key</option></select></div>
+          <div class="select-diff"><label>難易度</label><select id="p2_diff"><option value="EASY">EASY</option><option value="NORMAL">NORMAL</option><option value="HARD">HARD</option><option value="LUNATIC" selected>LUNATIC</option></select></div>
+        </div>
+      </div>
+
+      <!-- 第3希望 -->
+      <div class="vote-row">
+        <div class="vote-row-title">第3希望 (1pt)</div>
+        <div class="vote-row-inputs">
+          <div class="select-song"><label>楽曲</label><select id="p3_song"><option value="">-- 選択してください --</option></select></div>
+          <div class="select-mode"><label>モード</label><select id="p3_mode"><option value="6key">6key</option><option value="4key">4key</option></select></div>
+          <div class="select-diff"><label>難易度</label><select id="p3_diff"><option value="EASY">EASY</option><option value="NORMAL">NORMAL</option><option value="HARD">HARD</option><option value="LUNATIC" selected>LUNATIC</option></select></div>
+        </div>
+      </div>
+
+      <!-- 第4希望 -->
+      <div class="vote-row">
+        <div class="vote-row-title">第4希望 (1pt)</div>
+        <div class="vote-row-inputs">
+          <div class="select-song"><label>楽曲</label><select id="p4_song"><option value="">-- 選択してください --</option></select></div>
+          <div class="select-mode"><label>モード</label><select id="p4_mode"><option value="6key">6key</option><option value="4key">4key</option></select></div>
+          <div class="select-diff"><label>難易度</label><select id="p4_diff"><option value="EASY">EASY</option><option value="NORMAL">NORMAL</option><option value="HARD">HARD</option><option value="LUNATIC" selected>LUNATIC</option></select></div>
+        </div>
+      </div>
+
+      <!-- 第5希望 -->
+      <div class="vote-row">
+        <div class="vote-row-title">第5希望 (1pt)</div>
+        <div class="vote-row-inputs">
+          <div class="select-song"><label>楽曲</label><select id="p5_song"><option value="">-- 選択してください --</option></select></div>
+          <div class="select-mode"><label>モード</label><select id="p5_mode"><option value="6key">6key</option><option value="4key">4key</option></select></div>
+          <div class="select-diff"><label>難易度</label><select id="p5_diff"><option value="EASY">EASY</option><option value="NORMAL">NORMAL</option><option value="HARD">HARD</option><option value="LUNATIC" selected>LUNATIC</option></select></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="comment">コメント (任意):</label>
+        <textarea id="comment" placeholder="好きな曲への熱い思いや理由などをご自由にどうぞ！"></textarea>
+      </div>
+
+      <button type="button" onclick="submitVote()">投票する</button>
+    </form>
+  </div>
+
+  <!-- 全体公開用 集計結果エリア（投票期間終了後に自動表示） -->
+  <div class="card" id="publicResultCard" style="display: none;">
+    <h2>最終集計結果 <span class="status-badge badge-closed">投票終了</span></h2>
+    <p>投票は終了しました。たくさんのご投票ありがとうございました！</p>
+    
+    <h3>集計結果 (総投票数: <span id="pubTotalVotes">0</span>票)</h3>
+    <h4>曲別ランキングと詳細内訳</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>順位</th>
+          <th>楽曲名</th>
+          <th>総ポイント</th>
+          <th>希望数 (1/2/3/4/5)</th>
+          <th>モード・難易度内訳</th>
+        </tr>
+      </thead>
+      <tbody id="pubResultBody"></tbody>
+    </table>
+
+    <h4>寄せられたコメント一覧</h4>
+    <div id="pubCommentsContainer"></div>
+  </div>
+
+  <!-- 管理者用エリア -->
+  <div class="card">
+    <h2>管理者用パネル</h2>
+    <div class="form-group" id="adminAuthGroup">
+      <label>管理用キーを入力:</label>
+      <input type="password" id="adminKeyInput" placeholder="キーを入力してログイン">
+      <button type="button" onclick="checkAdminKey()" style="margin-top: 10px;">ログイン</button>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+      <button type="button" class="toggle-pub" id="togglePubBtn" onclick="togglePublish()"></button>
+      
+      <h3>現在の集計状況 (<span id="adminTotalVotes">0</span>票)</h3>
+      <h4>曲別ランキングと詳細内訳</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>順位</th>
+            <th>楽曲名</th>
+            <th>総ポイント</th>
+            <th>希望数 (1/2/3/4/5)</th>
+            <th>モード・難易度内訳</th>
+          </tr>
+        </thead>
+        <tbody id="adminResultBody"></tbody>
+      </table>
+
+      <h4>寄せられたコメント一覧</h4>
+      <div id="adminCommentsContainer"></div>
+
+      <button class="reset" onclick="resetVotes()">投票データをリセット</button>
+    </div>
+  </div>
+
+  <script>
+    const SECRET_KEY = "keyTOKA";
+
+    const songList = [
+      "希望の星は青霄に昇る", "龍王殺しのプリンセス", "ダンマクヒロイズム", "FÆTAL DRIVE", "Hyper Burster", "Waltz of Scarlet", "EYE LOVE YOU, YOU LOVE ME?", 
+      "ダイナマイト", "アマノジャクリバース (feat. ｙｔｒ)", "女の子ダイヤル", "希望の星は青霄に昇る (uma vs. Morimori Atsushi Remix)", "イドの水", 
+      "Frost And Fire (Dankagu Edit)", "Hanagensou (Dankagu Edit)", "夜乃風車", "天地遍く治めるは我が[X]VII条の神光", "Xeno Phantasm", "Re:Unknown X", "Armageddon", "DeitieSpeed Phantasm",
+      "【劇場版】天火一音ゲーマーちやりの逆襲", "Calamity Fortune", "Absolute Queen", "少女綺想曲 ～ Dream Battle", "Re:Border of Life", "STNC", "Subliminal Seduction", "ネクロファンタジア ～ Remix", "wish", "唯一無二のシミュラークル",
+      "CENSORED!!", "Call of Mirage (Game Edit)", "myth?", "不定形アバター", "Exteeend!!", "ばんきちゃんはもう誰にも止められない", "Ultimate taste", "患部で止まってすぐ溶ける～狂気の優曇華院", "無意識レクイエム（cosmobsp remix）", "千年幻想郷 ～ History of the Moon",
+      "穢れを纏いて籠め籠め（2024 Dankagu Edit）", "ピュアヒューリーズ ～ 心の在処", "天弓天華オトハナビ", "An stoirm", "Breaking the Silence", "ボーダーオブライフ", "妖々跋扈 ～ Who done it!", "Against, Perfect Cherry Blossom", "マツヨイナイトバグ", "断罪は遍く人間の元に",
+      "Sweet Requiem", "We Loved Gensokyo", "Re:Unknown X (marasy with 弦楽四重奏)", "永月", "フラワリングデイズ", "ほおずきみたいに紅い魂", "Lunatic Princess", "偶像に世界を委ねて ～ Idoratrize World", "デザイアドライブ", "Witches Rule (SIRIUS Remix)", "Tenacity",
+      "Lamento (Dankagu Edit)", "Stairway to Cherry Blossoms", "U.N.Owen Was Hero?", "Liminality", "ワンルール・ゲームチェンジャー", "はなまる！さいきょうハイパーチルノ", "スカーレット警察のゲットーパトロール24時", "ってゐ！～えいえんてゐVer～", "Karma D-Live",
+      "supernatural", "偶像に世界を委ねて (marasy piano ver.)", "BURN IN HELL", "Ayakashi set 14 Another ～ 夜が降りてくる", "キング・オブ・ザ・説教", "悪戯センセーション", "23145EASONS", "響縁", "far away", "SACRIFICE", "ナイト・オブ・ナイツ", "儚きもの人間",
+      "今宵は飄逸なエゴイスト(Live ver) ～ Egoistic Flowers.", "OIIA CHEN HOUSE", "オーディエンスを沸かす程度の能力 feat.タイツォン", "弾幕を持て、バレットフィリア達よ", "MagicPhilia (Chimera Edit)", "夜が降りてくる ～ Evening Star LSDj Remix (Dankagu Edit)",
+      "Flame of Nuclear(Dankagu Edit)", "打打音泉 (feat. 雨天決行)", "酒鬼☆RaiRai!!!", "PRESERVED VAMPIRE", "HEAT WAVER! (feat. らっぷびと, Fra)", "HUNDRED DUOVIGINTILLION ARROWS feat. itori", "Idoratrize World", "冬召喚の足踏", "Help me, ERINNNNNN!!", "天衣無縫(not)innocent?",
+      "亡き王女の為のセプテット", "Shout It Out Loud!!!", "M.O.N.E.Y.(ダンカグ Special REMIX Ver.)", "最終鬼畜妹フランドール_S", "DREAMIN' TURBO [DJ Command Remix]", "ブレイズ・アップ・ソング", "Night Flight Believer", "DesireDrive", "幻想河童行進曲(feat. ytr)",
+      "月まで届け、不死の煙", "影狼ちゃん月に吠える (Dankagu Edit)", "天狗ノ華", "Aestivalis(ダンマクカグラEdit)", "ネイティブフェイス(ダンカグ special ver.)", "Hell's Sun", "U.N.オーエンは彼女なのか？", "ミシャグジ・エンパイア", "ファビュラス", "解けないように", "ハルトマンの妖怪少女",
+      "Spring of Dreams", "PanneDemonology", "聖徳伝説 ～ True Administrator(深秘録Version)", "下剋上々", "チルノのパーフェクトさんすう教室", "Floating Darkness...", "魔理沙になりたいっ！", "完全犯罪⑥⑥BANG!!", "チルノのパーフェクトさんすう学園", "まちかとの『みこさま』",
+      "クレイジーバックダンサーズ", "ラストオカルトファンタジー", "夢は時空を越えて", "枯れ岸に咲く", "Crossed x Melody", "Burning ALIVER!", "Bang Bang!", "レプリカは嗤う", "バンパイアメイト", "Alice Maestera(REBIRTHED)", "ケロ⑨destiny - type130", "廻れ幻想フェスティバル",
+      "緋色月下、狂咲ノ絶 15th Anniversary Remix nayuta.ver", "東方妖々夢 ～the maximum moving about～", "sharp edge", "Midnight Syndrome", "Mishery(Dankagu Edit)", "Rough Sea (Game Edit)", "神々が恋した幻想郷", "Rock 'n' Rock 'n' Beat", "恋色マスタースパーク(爆音ジャズVer.)",
+      "最終鬼畜妹フランドール_S (原口沙輔は鬼畜なのか？Remix)", "Necrolovania", "空しき骸のメガロヴァニア", "決別の旅", "VOLUPTE (Game Edit)", "HAZARD AREA", "輝かしき弱肉強食の掟", "今夜、少女じゃいられない", "魔理沙は大変なものを盗んでいきました", "泡沫、哀のまほろば(cover ver.)",
+      "恋色マスタースパーク", "インターネットサバイバー", "幻想のサテライト", "現夢-genmu-", "囲い無き世は一期の月影", "フロム・ロスト・トゥ・エギゼキストラ", "Spider's Blood", "色は匂えど散りぬるを", "ハウリング", "夜空と人形", "紅楼 ～ Eastern Dream...", "瞬環フォトグラフィー", "らいぶおあらいぶ!",
+      "幻想症候群", "Iconoclasm", "Lucent Wish", "遥か遠く遥か彼方", "ハートビートは鳴りやまない", "LOVE EAST", "Ilias", "SEE YOU AGAIN!", "Unprivileged Access", "あうんどばいみー", "レイセン・オカルティア [東方深秘録 Re: Arrange]", "Christmas Bomb!!", "幽霊楽団 ～ Phantom Ensemble",
+      "ウサテイ20XX", "ソリッド", "The Karasu Wind", "Sadistic Love - ダンカグver", "SAMURAI GHOST GIRL, KILL! KILL!", "レザマリでもつらくないっ!", "幻想に咲いた花", "幻想郷ふしぎ大発見V2", "POKER FACE", "絡繰りドール", "Scream Out!", "紅星ミゼラブル～廃憶編", "さっきゅんライト(2025)", "Melody!",
+      "night::escape(two);", "『モノポリスティックタイクーン』", "Grip & Break down !!", "s.c.a.r.l.e.t - Dankagu Edit -", "双尾ステップ", "ヴワル魔法図書館 (Jazz & Chill Edit)", "Sunlight Diamonds (Violet Delta Remix)", "Necromantic", "ハートインワンダーランド", "世界は可愛く出来ている",
+      "世界秘封倶楽部化計画", "Dancing Dollz feat. cold kiss", "星を廻せ月より速く", "ハレルヤが聞こえる", "あの日の蜃気楼", "LOSTPHANTASIA", "Ford Stream", "WARNING x WARNING x WANING", "Dial Connected", "Hands (feat. AO, らっぷびと)", "絶望的不協和音",
+      "黒い海に紅く ～ Legendary Fish", "GAME OVER (In Disarray)", "Mami Mami Zone", "カリスマ煉獄天神", "Hollow Masquearade", "地の色は黄色", "マリオネットメトロポリス", "Rainy, rainy days", "愛き夜道 (feat. ランコ, 雨天決行)", "Starlight Dance Floor (D.M.K. edit)", "エピクロスの虹はもう見えない",
+      "巡るHarvest", "神霊廟秋祭りっ！", "フォールオブフォール", "flanticnight", "無生命サーフェス", "drizzly rain", "Help me, ERINNNNNN!! (Band ver.)", "待チ人ハ来ズ。", "有頂天ドリーマーズ", "Sweets Time", "フラグメンツ", "嘘と慟哭", "Paranoia", "ゆけむり魂温泉II", "黄金航路", "明星ロケット",
+      "Shanghaihai", "Who killed U.N.Owen", "孤独月", "星色夜空", "五秒革命前夜", "壊れた人形のマーチ (SA ver.)", "ツキカケ (Coro)", "Wind of Faith", "また紫桜の下に", "sparkle light", "アタシマニア", "タイニーリトル・アジアンタム", "SWEET BLUE ICE", "Flower Flag", "天つ風よ", "雪琥珀 -snow amber- Remix",
+      "月齢11.3ของキャンドルマジック", "Can't look away", "砕月", "天衣無縫", "パンドラ", "Night's Dream (D.M.K. edit)", "芥川龍之介の河童", "フォックスバレット", "Resonance ～私たらしめるもの", "天使の腕試し", "さようなら。ありがとう。", "Lotus Love", "トランスダンスアナーキー", "月に叢雲華に風", "HANIPAGANDA",
+      "Bad Apple!! feat. nomico", "郷愁のロンド", "ひとつよがりの逃避行", "高速メリーゴーランド", "クレプスクルム", "華鳥風月", "Romantic Fall feat. 綾倉盟", "Painting The Lips Red", "Bad Apple!! feat. nomico (Tetsuya Komuro Remix)", "博麗神社町内会音頭", "ヒトリシズカ (Marcia Cover Version)",
+      "White Lotus...", "あいつはイカサマをしている", "揺籃の唄", "うたかた", "月まで届け、不死の鋼 ～ IMMORTAL PHOENIX", "最後の一人は慣れてるから ～ Stone Goddess", "鹿狩りのレミニセンス", "Paranormal Phenomenon (Game Edit)", "Termilunes", "Netherworld(Gamesize Edit)", "NOiSE -ノイズ-",
+      "グーテンベルクの科学世紀", "花月夜", "514(Dankagu Edit)", "ミクロコスモス", "Stardust Dreams", "Phantasm Brigade ～ ビーストver", "TAO DRIVE", "リスペク風神", "上海紅茶館 ～ Chinese Tea", "フラワリングナイト", "Scarlet Fire", "sweet little sister ～ チュウニver",
+      "弾幕注意報", "神々の祈り", "Drive my Life", "疾走あんさんぶる", "Unlimited Spark!", "氷結娘", "Tag", "お嫁にしなさいっ！", "Rondo of fantasy", "タイヨウノハナ", "シアワセうさぎ。"
+    ];
+
+    for (let i = 1; i <= 5; i++) {
+      const select = document.getElementById(`p${i}_song`);
+      songList.forEach(song => {
+        const opt = document.createElement('option');
+        opt.value = song;
+        opt.textContent = song;
+        select.appendChild(opt);
+      });
+    }
+
+    function getVotes() {
+      return JSON.parse(localStorage.getItem('dankagu_votes')) || [];
+    }
+
+    function isPublished() {
+      return localStorage.getItem('dankagu_published') === 'true';
+    }
+
+    function submitVote() {
+      if (isPublished()) {
+        alert("投票期間は終了しています。");
+        return;
+      }
+
+      const errorDiv = document.getElementById('error-msg');
+      errorDiv.textContent = "";
+
+      const choices = [];
+      const selectedSongs = [];
+
+      for (let i = 1; i <= 5; i++) {
+        const song = document.getElementById(`p${i}_song`).value;
+        const mode = document.getElementById(`p${i}_mode`).value;
+        const diff = document.getElementById(`p${i}_diff`).value;
+
+        if (song) {
+          selectedSongs.push(song);
+          choices.push({ rank: i, song, mode, diff });
+        }
+      }
+
+      if (choices.length === 0) {
+        errorDiv.textContent = "少なくとも1つは曲を選択してください。";
+        return;
+      }
+
+      if (new Set(selectedSongs).size !== selectedSongs.length) {
+        errorDiv.textContent = "同一の曲が複数選択されています。別の曲を選んでください。";
+        return;
+      }
+
+      const nameVal = document.getElementById('nickname').value.trim();
+      const voteData = {
+        nickname: nameVal || "匿名",
+        choices: choices,
+        comment: document.getElementById('comment').value.trim()
+      };
+
+      const votes = getVotes();
+      votes.push(voteData);
+      localStorage.setItem('dankagu_votes', JSON.stringify(votes));
+
+      document.getElementById('voteForm').reset();
+      
+      if (document.getElementById('adminPanel').style.display === 'block') {
+        renderAdminResults();
+      }
+      alert("投票が完了しました！");
+    }
+
+    function checkAdminKey() {
+      const input = document.getElementById('adminKeyInput').value;
+      if (input === SECRET_KEY) {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('adminAuthGroup').style.display = 'none';
+        updateAdminBtn();
+        renderAdminResults();
+      } else {
+        alert("キーが違います。");
+      }
+    }
+
+    function togglePublish() {
+      const current = isPublished();
+      const next = !current;
+      localStorage.setItem('dankagu_published', next ? 'true' : 'false');
+      updateDisplayState();
+      updateAdminBtn();
+      if (next) {
+        alert("投票を締め切り、全体に結果を公開しました。");
+      } else {
+        alert("結果の公開を停止し、投票受付を再開しました。");
+      }
+    }
+
+    function updateAdminBtn() {
+      const btn = document.getElementById('togglePubBtn');
+      if (isPublished()) {
+        btn.textContent = "投票受付を再開する (公開停止)";
+        btn.style.background = "#ff9800";
+      } else {
+        btn.textContent = "投票を締め切って結果を公開する";
+        btn.style.background = "#2196F3";
+      }
+    }
+
+    function updateDisplayState() {
+      const published = isPublished();
+      const voteCard = document.getElementById('voteCard');
+      const publicCard = document.getElementById('publicResultCard');
+
+      if (published) {
+        voteCard.style.display = 'none';
+        publicCard.style.display = 'block';
+        renderPublicResults();
+      } else {
+        voteCard.style.display = 'block';
+        publicCard.style.display = 'none';
+      }
+    }
+
+    function calculateData() {
+      const votes = getVotes();
+      const scores = {};
+      const details = {};
+      const playStats = {};
+      const pts = { 1: 3, 2: 2, 3: 1, 4: 1, 5: 1 };
+
+      songList.forEach(song => {
+        scores[song] = 0;
+        details[song] = [0, 0, 0, 0, 0];
+        playStats[song] = {};
+      });
+
+      const comments = [];
+
+      votes.forEach(v => {
+        if (v.choices) {
+          v.choices.forEach(c => {
+            const song = c.song;
+            const p = pts[c.rank];
+            scores[song] += p;
+            details[song][c.rank - 1]++;
+            const key = `${c.mode} ${c.diff}`;
+            playStats[song][key] = (playStats[song][key] || 0) + 1;
+          });
+        }
+        if (v.comment) {
+          comments.push({
+            author: v.nickname || "匿名",
+            text: v.comment
+          });
+        }
+      });
+
+      const sortedSongs = songList
+        .filter(song => scores[song] > 0)
+        .sort((a, b) => scores[b] - scores[a]);
+
+      return { total: votes.length, sortedSongs, scores, details, playStats, comments };
+    }
+
+    function renderPublicResults() {
+      const data = calculateData();
+      document.getElementById('pubTotalVotes').textContent = data.total;
+      renderTableAndComments(data, 'pubResultBody', 'pubCommentsContainer');
+    }
+
+    function renderAdminResults() {
+      const data = calculateData();
+      document.getElementById('adminTotalVotes').textContent = data.total;
+      renderTableAndComments(data, 'adminResultBody', 'adminCommentsContainer');
+    }
+
+    function renderTableAndComments(data, tbodyId, commentsId) {
+      const tbody = document.getElementById(tbodyId);
+      tbody.innerHTML = "";
+
+      data.sortedSongs.forEach((song, index) => {
+        const tr = document.createElement('tr');
+        const statsArr = [];
+        for (const [k, count] of Object.entries(data.playStats[song])) {
+          statsArr.push(`${k}: ${count}票`);
+        }
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${song}</td>
+          <td><strong>${data.scores[song]} pt</strong></td>
+          <td>${data.details[song].join(" / ")}</td>
+          <td>${statsArr.join(", ")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const commentsContainer = document.getElementById(commentsId);
+      commentsContainer.innerHTML = "";
+      if (data.comments.length === 0) {
+        commentsContainer.innerHTML = "<p style='color:#777;'>コメントはまだありません。</p>";
+      } else {
+        data.comments.forEach(c => {
+          const div = document.createElement('div');
+          div.className = "comment-box";
+          
+          const authorDiv = document.createElement('div');
+          authorDiv.className = "comment-author";
+          authorDiv.textContent = `投稿者: ${c.author}`;
+          
+          const textDiv = document.createElement('div');
+          textDiv.textContent = c.text;
+
+          div.appendChild(authorDiv);
+          div.appendChild(textDiv);
+          commentsContainer.appendChild(div);
+        });
+      }
+    }
+
+    function resetVotes() {
+      if (confirm("本当に全ての投票データを削除しますか？")) {
+        localStorage.removeItem('dankagu_votes');
+        localStorage.removeItem('dankagu_published');
+        updateDisplayState();
+        if (document.getElementById('adminPanel').style.display === 'block') {
+          updateAdminBtn();
+          renderAdminResults();
+        }
+      }
+    }
+
+    // 初期化
+    updateDisplayState();
+  </script>
+</body>
+</html>
